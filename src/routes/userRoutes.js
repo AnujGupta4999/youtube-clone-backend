@@ -7,6 +7,7 @@ import {
   logoutUser,
   refreshAccessToken,
   registerUser,
+  updateAccountDetails,
   updateUserAvatar,
   updateUserCoverImage,
 } from "../controllers/userControllers.js";
@@ -34,19 +35,19 @@ userRouter.route("/register").post(
   ]),
 
   registerUser
-);
+);1
 
-userRouter.route("/login").post(loginUser);
+userRouter.route("/login").post(loginUser);1
 
 //secured routes
-userRouter.route("/logout").post(verifyJWT, logoutUser);
+userRouter.route("/logout").post(verifyJWT, logoutUser);1
 
 userRouter.route("/refresh-token").post(refreshAccessToken);
 
-userRouter.route("/change-password").post(verifyJWT, changeCurrentPassword);
-userRouter.route("/current-user").get(verifyJWT, getCurrentUser);
+userRouter.route("/change-password").post(verifyJWT, changeCurrentPassword);1
+userRouter.route("/current-user").get(verifyJWT, getCurrentUser);1
 
-userRouter.route("/uppdate-account").patch(verifyJWT);
+userRouter.route("/update-account").patch(verifyJWT,updateAccountDetails);
 
 userRouter
   .route("/avatar")

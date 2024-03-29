@@ -43,7 +43,7 @@ const registerUser = asynchandler(async (req, res) => {
   }
 
   const avatarLocalPath = req.files?.avatar[0]?.path;
-  //   const coverImageLocalPath = req.files?.coverImage[0]?.path;
+    // const coverImageLocalPath = req.files?.coverImage[0]?.path;
 
   let coverImageLocalPath;
   if (
@@ -171,7 +171,7 @@ const refreshAccessToken = asynchandler(async (req, res) => {
   const incomingRefreshToken =
     req.cookies.refreshToken || req.body.refreshToken;
   if (!incomingRefreshToken) {
-    throw new ApiErroor(401, "unauthorized request");
+    throw new ApiError(401, "unauthorized request");
   }
 
   try {
@@ -238,7 +238,7 @@ const getCurrentUser = asynchandler(async (req, res) => {
 const updateAccountDetails = asynchandler(async (req, res) => {
   const { fullName, email } = req.body;
 
-  if (!fullName || !email) {
+  if (!fullName && !email) {
     throw new ApiError(400, "All fields are required");
   }
   const user = await User.findByIdAndUpdate(
@@ -254,14 +254,15 @@ const updateAccountDetails = asynchandler(async (req, res) => {
 
   return res
     .status(200)
-    .josn(new ApiResponse(200, user, "Account details updated successfully"));
+    .json(new ApiResponse(200, user, "Account details updated successfully"));
 });
 
 const updateUserAvatar = asynchandler(async (req, res) => {
-  const avatarLocalPath = req.files?.path;
+  const avatarLocalPath = req.file?.path;
   if (!avatarLocalPath) {
     throw new ApiError(400, "Avatar file is required");
   }
+  console.log(req.file);
 
   const avatar = await uploadOnCloudinary(avatarLocalPath);
 
@@ -281,76 +282,80 @@ const updateUserAvatar = asynchandler(async (req, res) => {
     .json(new ApiResponse(200, user, "avatar upadted successfully"));
 });
 
-// const updateUserCoverImage = asynchandler(async(req, res)=>{
-//     const coverImageLocalPath = req.files?.path
-//     if(!coverImageLocalPath){
-//         throw new ApiError(400, "coverImage file is required")
-//     }
-
-//     const  coverImage = await uploadOnCloudinary(coverImageLocalPath)
-
-//     if(!coverImage.url){
-//         throw new ApiError(400, "Error while uploading on coverImage")
-//     }
-//     const user = User.findByIdAndUpdate(
-//         req.user?._id,
-//         {
-//             coverImage:coverImage.url,
-//         },
-//         {new:true}
-//     ).select("-password")
-
-//     return res
-//     .status(200)
-//     .json(
-//         new ApiResponse(200,user,"coverImage upadted successfully")
-//     )
-// })
 const updateUserCoverImage = asynchandler(async (req, res) => {
-  const coverImageLocalPath = req.files?.path;
-  if (!coverImageLocalPath) {
-    throw new ApiError(400, "coverImage file is required");
-  }
+    const coverImageLocalPath = req.file?.path;
+    if (!coverImageLocalPath) {
+      throw new ApiError(400, "coverImage file is required");
+    }
+  
+    const coverImage = await uploadOnCloudinary(coverImageLocalPath);
+  
+    if (!coverImage.url) {
+      throw new ApiError(400, "Error while uploading on coverImage");
+    }
+  
+    // Update user's cover image URL
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user?._id,
+      { coverImage: coverImage.url },
+      { new: true }
+    ).select("-password");
+  
+    // Ensure that the response does not contain circular references
+    const responseData = {
+      message: "Cover image updated successfully",
+      user: updatedUser.toObject(), // Convert Mongoose document to plain object
+    };
+  
+    return res.status(200).json(new ApiResponse(200, responseData));
+  });
+  
 
-  // Upload new cover image to Cloudinary
-  const coverImage = await uploadOnCloudinary(coverImageLocalPath);
-  if (!coverImage.url) {
-    throw new ApiError(400, "Error while uploading coverImage");
-  }
+// const updateUserCoverImage = asynchandler(async (req, res) => {
+//   const coverImageLocalPath = req.files?.path;
+//   if (!coverImageLocalPath) {
+//     throw new ApiError(400, "coverImage file is required");
+//   }
 
-  // Fetch current user
-  const user = await User.findById(req.user?._id).select("-password");
-  if (!user) {
-    throw new ApiError(404, "User not found");
-  }
+//   // Upload new cover image to Cloudinary
+//   const coverImage = await uploadOnCloudinary(coverImageLocalPath);
+//   if (!coverImage.url) {
+//     throw new ApiError(400, "Error while uploading coverImage");
+//   }
 
-  // Delete previous cover image from Cloudinary
-  if (user.coverImage) {
-    const publicId = extractPublicIdFromUrl(user.coverImage);
-    await deleteFromCloudinary(publicId);
-  }
+//   // Fetch current user
+//   const user = await User.findById(req.user?._id).select("-password");
+//   if (!user) {
+//     throw new ApiError(404, "User not found");
+//   }
 
-  // Update user's cover image URL
-  user.coverImage = coverImage.url;
-  await user.save();
+//   // Delete previous cover image from Cloudinary
+//   if (user.coverImage) {
+//     const publicId = extractPublicIdFromUrl(user.coverImage);
+//     await deleteFromCloudinary(publicId);
+//   }
 
-  return res
-    .status(200)
-    .json(new ApiResponse(200, user, "Cover image updated successfully"));
-});
+//   // Update user's cover image URL
+//   user.coverImage = coverImage.url;
+//   await user.save();
 
-// Function to extract public ID from Cloudinary image URL
-function extractPublicIdFromUrl(url) {
-  const parts = url.split("/");
-  const publicIdWithExtension = parts[parts.length - 1];
-  return publicIdWithExtension.split(".")[0];
-}
+//   return res
+//     .status(200)
+//     .json(new ApiResponse(200, user, "Cover image updated successfully"));
+// });
 
-// Function to delete image from Cloudinary using public ID
-async function deleteFromCloudinary(publicId) {
-  // Code to delete image from Cloudinary using public ID
-  // Example: cloudinary.v2.uploader.destroy(publicId, (error, result) => { });
-}
+// // Function to extract public ID from Cloudinary image URL
+// function extractPublicIdFromUrl(url) {
+//   const parts = url.split("/");
+//   const publicIdWithExtension = parts[parts.length - 1];
+//   return publicIdWithExtension.split(".")[0];
+// }
+
+// // Function to delete image from Cloudinary using public ID
+// async function deleteFromCloudinary(publicId) {
+//   // Code to delete image from Cloudinary using public ID
+// cloudinary.v2.uploader.destroy(publicId, (error, result) => { });
+// }
 
 // Assume the functions uploadOnCloudinary, ApiResponse, and asyncHandler are defined elsewhere in your code.
 
@@ -388,7 +393,7 @@ const getUserChannelProfile = asynchandler(async (req, res) => {
           $size: "$subscribers",
         },
         channelsSubscribedToCount: {
-          $size: "siubscribedTo",
+          $size: "subscribedTo",
         },
         isSubscribedTo: {
           $cond: {
@@ -474,6 +479,9 @@ const getWatchHistory = asynchandler(async (req, res) => {
       )
     );
 });
+
+
+
 
 export {
   loginUser,

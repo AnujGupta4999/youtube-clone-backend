@@ -26,7 +26,7 @@ const storage = multer.diskStorage({
     //         message:"No files were uploaded"
     //     })
     // }
-    if(file.mimetype!== 'image/jpeg' && file.mimetype!== 'image/png' && file.mimetype!== 'image/jpg'){
+    if(file.mimetype === 'image/jpeg' || file.mimetype === 'image/png' || file.mimetype  === 'image/jpg'){
         cb(null, true);       
     }else{
       cb(new Error("only Jpeg and PNG files are allowed"),false);

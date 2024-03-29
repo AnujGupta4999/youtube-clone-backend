@@ -7,29 +7,59 @@ cloudinary.config({
 });
 
 
-const uploadOnCloudinary = async (localFilePath)=>{
-    try{
-        if(!localFilePath){
+
+// const uploadOnCloudinary = async (localFilePath)=>{
+//     try{
+//         if(!localFilePath){
+//             return null;
+//         }
+
+//         //upload the file on cloudinary
+//         const response  = await cloudinary.uploader.upload
+//         (localFilePath, {
+//             resource_type:"auto"
+//         })
+
+//         //file has been uploaded onn cloudinary
+//         // console.log("file is uploaded on cloudinary",response.url);
+//         fs.unlinkSync(localFilePath)
+//         return response;
+
+//     }catch(e){
+//         fs.unlinkSync(localFilePath) //remove the locally saved temporary file
+//         // as the upload operation got failed
+//         return null;
+//     }
+// }
+
+const uploadOnCloudinary = async (localFilePath) => {
+    try {
+        if (!localFilePath) {
             return null;
         }
 
-        //upload the file on cloudinary
-        const response  = await cloudinary.uploader.upload
-        (localFilePath, {
-            resource_type:"auto"
-        })
+        // Check if the file exists before attempting to upload
+        if (!fs.existsSync(localFilePath)) {
+            throw new Error('Local file does not exist');
+        }
 
-        //file has been uploaded onn cloudinary
-        // console.log("file is uploaded on cloudinary",response.url);
-        fs.unlinkSync(localFilePath)
+        // Upload the file on Cloudinary
+        const response = await cloudinary.uploader.upload(localFilePath, {
+            resource_type: "auto"
+        });
+
+        // File has been uploaded on Cloudinary, now delete the local file
+        fs.unlinkSync(localFilePath);
         return response;
 
-    }catch(e){
-        fs.unlinkSync(localFilePath) //remove the locally saved temporary file
-        // as the upload operation got failed
+    } catch (e) {
+        // Remove the locally saved temporary file as the upload operation failed
+        if (fs.existsSync(localFilePath)) {
+            fs.unlinkSync(localFilePath);
+        }
         return null;
     }
 }
 
+export { uploadOnCloudinary };
 
-export {uploadOnCloudinary};
